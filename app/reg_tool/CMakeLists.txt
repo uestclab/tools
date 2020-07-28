@@ -5,12 +5,12 @@ include_directories("/home/dpdk/liqing/code/GW_handover/handover_Server/dependen
 include_directories("/home/dpdk/liqing/common/include")
 include_directories("${PROJECT_SOURCE_DIR}/include")
 include_directories("${PROJECT_SOURCE_DIR}/src")
-include_directories("${PROJECT_SOURCE_DIR}/app/spi_load_fpga")
+include_directories("${PROJECT_SOURCE_DIR}/app/reg_tool")
 
-SET(BIN_NAME spi_load_fpga) 
+SET(BIN_NAME reg_tool) 
 
 #通用源文件 
-aux_source_directory(${PROJECT_SOURCE_DIR}/app/spi_tool BIN_SRCS) 
+aux_source_directory(${PROJECT_SOURCE_DIR}/app/reg_tool BIN_SRCS) 
 
 aux_source_directory(${PROJECT_SOURCE_DIR}/src SRCS) 
  

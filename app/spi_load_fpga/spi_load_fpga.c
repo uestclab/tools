@@ -26,6 +26,8 @@
 #include <sys/time.h>
 #include <dirent.h>
 
+#include "tool.h"
+
 
 /* my file */
 

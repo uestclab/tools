@@ -12,9 +12,9 @@ SET(BIN_NAME spi_tool)
 #通用源文件 
 aux_source_directory(${PROJECT_SOURCE_DIR}/app/spi_tool BIN_SRCS) 
 
-#aux_source_directory(${PROJECT_SOURCE_DIR}/src SRCS) 
+aux_source_directory(${PROJECT_SOURCE_DIR}/src SRCS) 
  
-add_executable(${BIN_NAME} ${BIN_SRCS})
+add_executable(${BIN_NAME} ${BIN_SRCS} ${SRCS})
 
 add_library(cjson SHARED IMPORTED)
 

@@ -11,24 +11,11 @@
  * Cross-compile with cross-gcc -I/path/to/cross-kernel/include
  */
 
-#include <stdint.h>
-#include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <getopt.h>
-#include <fcntl.h>
-#include <sys/ioctl.h>
-#include <arpa/inet.h>
-#include <linux/ioctl.h>
-#include <sys/stat.h>
-#include <linux/types.h>
+#include "tool.h"
 #include <linux/spi/spidev.h>
-#include <sys/time.h>
-#include <dirent.h>
-#include <limits.h>
-#include <errno.h>
 #include "cJSON.h"
+#include "read_file.h"
+#include "str2digit.h"
 
 #define BUFF_LEN 256
 
@@ -38,121 +25,6 @@ uint8_t padd_tx[BUFF_LEN] = {0, };
 static uint32_t mode;
 static uint8_t bits = 8;
 static uint32_t speed = 0x7A120;
-
-#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
-
-static inline void* xmalloc(size_t size)
-{
-	void *ptr = malloc(size);
-	return ptr;
-}
-
-static inline void* xzalloc(size_t size)
-{
-	void *ptr = malloc(size);
-	memset(ptr, 0, size);
-	return ptr;
-}
-
-static inline void* xrealloc(void *ptr, size_t size)
-{
-	ptr = realloc(ptr, size);
-	return ptr;
-}
-
-#define	xfree(ptr) do{ \
-	if(ptr){ \
-		free(ptr); \
-		ptr = NULL; \
-	} \
-}while(0)
-
-int read_config_file(const char *path, char **file_buf)
-{
-	int fd, ret;
-	struct stat buf;
-
-	if(NULL == path){
-		ret = -EINVAL;
-		goto exit;
-	}
-	
-	ret = fd =  open(path,(O_RDONLY | O_SYNC), 0666);
-	if(ret < 0){
-		//log_error("open(%s)err",path);
-		goto exit;
-	}
-	fstat(fd, &buf);
-	
-	*file_buf = (char*)xzalloc(buf.st_size + 1); //�����һ���ֽ�
-	if(NULL == *file_buf){
-		//log_error("malloc(%s)err",path);
-		ret = -ENOMEM;
-		goto exit;
-	}
-	
-	ret = read(fd,*file_buf,buf.st_size);
-	close(fd);
-exit:
-	return ret;
-}
-
-static unsigned long long ret_ERANGE(void)
-{
-	errno = ERANGE; /* this ain't as small as it looks (on glibc) */
-	return 0;//ULLONG_MAX;
-}
-
-static int bb_ascii_isalnum(unsigned char a)
-{
-	unsigned char b = a - '0';
-	if (b <= 9)
-		return (b <= 9);
-	b = (a|0x20) - 'a';
-	return b <= 'z' - 'a';
-}
-
-static unsigned long long handle_errors(unsigned long long v, char **endp)
-{
-	char next_ch = **endp;
-
-	/* errno is already set to ERANGE by strtoXXX if value overflowed */
-	if (next_ch) {
-		/* "1234abcg" or out-of-range? */
-		if (bb_ascii_isalnum(next_ch) || errno)
-			return ret_ERANGE();
-		/* good number, just suspicious terminator */
-		errno = EINVAL;
-	}
-	return v;
-}
-
-
-int bb_strtoull(const char *arg, char **endp, int base)
-{
-	unsigned long long v;
-	char *endptr;
-	int index = 0;
-
-	if (!endp) endp = &endptr;
-	*endp = (char*) arg;
-
-	/* strtoul("  -4200000000") returns 94967296, errno 0 (!) */
-	/* I don't think that this is right. Preventing this... */
-	if (!bb_ascii_isalnum(arg[0])){
-		if('-' == arg[0]){
-			index = 1;
-		}else{
-			return ret_ERANGE();
-		}
-	}
-
-	/* not 100% correct for lib func, but convenient for the caller */
-	errno = 0;
-	v = strtoull(&arg[index], endp, base);
-	v = handle_errors(v, endp);
-	return index?-v:v;
-}
 
 static void pabort(const char *s)
 {
@@ -202,18 +74,6 @@ static void transfer(int fd, uint8_t const *tx, uint8_t const *rx, size_t len)
 	if (ret < 1)
 		pabort("can't send spi message");
 
-}
-
-char* get_json_buf(char* path){
-    char *file_buf;
-
-    int ret = read_config_file(path, &file_buf);
-
-	if(ret > 0){
-		return file_buf;
-	}else{
-		return NULL;
-	}
 }
 
 void get_spidev(char* buf, char** dev){
