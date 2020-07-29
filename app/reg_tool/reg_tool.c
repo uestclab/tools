@@ -126,6 +126,7 @@ int process_reg_json(reg_info_t* reg_info, char* buf){
 			char* ret = run_read_cmd(addr);
 			if(ret){
 				printf("read: devmem 0x%x --- ret = %s\n", addr, ret);
+				free(ret);
 			}
 		}
 
