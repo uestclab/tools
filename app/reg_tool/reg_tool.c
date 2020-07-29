@@ -68,6 +68,10 @@ int process_reg_json(reg_info_t* reg_info, char* buf){
 	cJSON * array_item = NULL;
     root = cJSON_Parse(buf);
 
+	if(cJSON_HasObjectItem(root,"base") == 0){
+		printf("invalid reg json !\n");
+		return -1;
+	}
 	item = cJSON_GetObjectItem(root , "base");
 	reg_info->base = bb_strtoull(item->valuestring, NULL, 16);
 

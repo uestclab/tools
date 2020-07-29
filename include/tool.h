@@ -47,6 +47,26 @@ static inline void* xrealloc(void *ptr, size_t size)
 	} \
 }while(0)
 
+static inline void get_usec(struct timeval *time)
+{
+	gettimeofday(time, NULL);
+
+}
+
+static inline int time_expire(struct timeval start, int expire_us)
+{
+	struct timeval now;
+	int sec;
+	int diff_usec;
+	
+	gettimeofday(&now, NULL);
+
+	sec = now.tv_sec - start.tv_sec;
+	
+	diff_usec = sec * 1000000 + now.tv_usec - start.tv_usec;
+
+	return ((diff_usec - expire_us)>=0)?1:0;
+}
 
 
 #endif
