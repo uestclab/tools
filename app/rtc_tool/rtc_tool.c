@@ -44,7 +44,6 @@ typedef struct rtc_time_t{
 	int seconds;
 }rtc_time_t;
 
-
 rtc_time_t* get_rtc_time(){
 	rtc_time_t *time = (rtc_time_t*)xzalloc(sizeof(rtc_time_t));
 
@@ -140,11 +139,35 @@ void print_rtc(rtc_time_t *time){
 	printf(str);
 }
 
+void date_cmd(rtc_time_t* time )
+{
+	//date -s "2020-07-30 15:00:00"
+    char command[128];
+	char hours[3]   = {'0'};
+	char minutes[3] = {'0'};
+	char seconds[3] = {'0'};
+	char months[3]  = {'0'};
+	char days[3]    = {'0'};
+	uint32_t calendar;
+
+	small_int2str(time->hours, hours);
+	small_int2str(time->minutes, minutes);
+	small_int2str(time->seconds, seconds);
+	small_int2str(time->months, months);
+	small_int2str(time->days, days);
+
+	calendar = time->years * 10000 + time->months * 100 + time->days ;
+
+    sprintf(command, "date -s \"%d-%s-%s %s:%s:%s\"", time->years, months,days ,hours, minutes, seconds);
+	system(command);
+}
+
 int main(int argc, char *argv[])
 {
 	// read hw time
 	if(argc == 1){
 		rtc_time_t* time = get_rtc_time();
+		date_cmd(time);
 		print_rtc(time);
 		free(time);
 		return 0;
