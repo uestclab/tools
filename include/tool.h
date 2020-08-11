@@ -17,6 +17,8 @@
 #include <dirent.h>
 #include <limits.h>
 #include <errno.h>
+#include <poll.h>
+#include "list.h"
 
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))

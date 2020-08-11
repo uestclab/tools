@@ -57,3 +57,21 @@ int bb_strtoull(const char *arg, char **endp, int base)
 	return index?-v:v;
 }
 
+
+int get_item_val(char *str)
+{
+	int ret = -1;
+	char hex_str_lc[] = "0x";
+	char hex_str_uc[] = "0X";
+	int base = 10;
+
+
+	if(strstr(str,hex_str_lc) || \
+		strstr(str,hex_str_uc)){
+		base = 16;
+	}
+			
+	ret = bb_strtoull(str, NULL, base);
+	return ret;
+}
+
