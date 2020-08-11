@@ -16,6 +16,7 @@
 #include "cJSON.h"
 #include "read_file.h"
 #include "str2digit.h"
+#include "spi_cmd.h"
 
 #define BUFF_LEN 256
 
@@ -350,7 +351,15 @@ int main(int argc, char *argv[])
 	int ret;
 	int instuction;
     char* jsonBuf = NULL;
-
+/* for test cmd */
+	// g_args_para g_args;
+	// if(parse_cmd_line(argc, argv, &g_args)){
+	// 	return 0;
+	// }else{
+	// 	printf("spidev : %s , json_path : %s, instruction : %u\n", g_args.spidev, g_args.json_path, g_args.instuction);
+	// 	return 0;
+	// }
+/* ------------ */
 	if(argc == 3){
 		spi_handler->spidev = malloc(strlen(argv[1])+1);
 		memcpy(spi_handler->spidev,argv[1],strlen(argv[1])+1);

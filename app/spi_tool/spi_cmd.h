@@ -3,18 +3,18 @@
 #define	LONG_COMMON_OPT\
 	{ "help",	 0, NULL, 'h' },\
 	{ "version", 0, NULL, 'v' },\
-	{ "time",    1, NULL, 't' },\
-	{ "weekday",   1, NULL, 'w' },\
+	{ "dev",    1, NULL, 'd' },\
+	{ "json",   1, NULL, 'l' },\
 	{ "spec",    0, NULL, 's' },\
-	{ "calendar",   1, NULL, 'c' },\
+	{ "instuction",   1, NULL, 'i' },\
 	{ 0, 0, 0, 0 }
 
-#define	SHORT_COMMON_OPT	"hvt:w:s::c:"
+#define	SHORT_COMMON_OPT	"hvd:l:s::i:"
 
 typedef struct g_args_para{
-	int weekday;
-	uint32_t calendar; // 20200729
-	uint32_t time; // 155156 //
+	char *json_path;
+	char *spidev;
+	uint32_t instuction;
 }g_args_para;
 
 

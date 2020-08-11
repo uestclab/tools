@@ -1,5 +1,5 @@
 #include "cmd_flag.h"
-#include "cmd_line.h"
+#include "spi_cmd.h"
 #include "str2digit.h"
 
 const char short_options[] = SHORT_COMMON_OPT;
@@ -10,10 +10,12 @@ const struct option long_options[] = {
 
 
 static void print_usage (FILE* stream, int exit_code){
-	fprintf (stream, "Usage:  rtc_tool -t 160652 -c 20200729 -w 1\n");
-    fprintf (stream, "-t : hour minute second \n");
-    fprintf (stream, "-c : year month day \n");
-    fprintf (stream, "-w : Sunday(0) ~ Saturday(6) \n");
+	fprintf (stream, "Usage:  spi_tool -l json_path\n");
+	fprintf (stream, "Usage:  spi_tool -d spidev -i instruction\n");
+    fprintf (stream, "-l : /run/media/mmcblk1p1/etc/*.json \n");
+    fprintf (stream, "-d : /dev/spidev* \n");
+    fprintf (stream, "-i : instruction 0x* hex\n");
+	printf("usage : spi_tool [spidev] [instuction] or spi_tool [json]\n");
 }
 
 int universal_get_opt(int opt, const char *optarg, void* ptr){
@@ -35,18 +37,21 @@ int universal_get_opt(int opt, const char *optarg, void* ptr){
 			ret = -EPERM;
 		break;
 
-		case 't':
-			g_args->time = bb_strtoull(optarg, NULL, 10);
+		case 'l':
+			g_args->json_path = xzalloc(strlen(optarg)+1);
+			memcpy(g_args->json_path,optarg,strlen(optarg)+1);
             ret = 0;
 		break;
 
-		case 'c':
-			g_args->calendar = bb_strtoull(optarg, NULL, 10);
+		case 'i':
+			g_args->instuction = bb_strtoull(optarg, NULL, 16);
+			g_args->instuction = htonl(g_args->instuction) >> 8;
             ret = 0;
 		break;
 
-		case 'w':
-            g_args->weekday = bb_strtoull(optarg, NULL, 10);
+		case 'd':
+			g_args->spidev = xzalloc(strlen(optarg)+1);
+			memcpy(g_args->spidev,optarg,strlen(optarg)+1);
             ret = 0;
 		break;
 

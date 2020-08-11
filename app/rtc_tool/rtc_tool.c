@@ -174,7 +174,7 @@ int main(int argc, char *argv[])
 	}
 
 	g_args_para g_args;
-	if(get_cmd_line(argc, argv, &g_args)){
+	if(parse_cmd_line(argc, argv, &g_args)){
 		return 0;
 	}
 
