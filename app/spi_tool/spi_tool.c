@@ -277,7 +277,7 @@ int parse_spidev(char* buf, spi_info_t* spi_handler){
 
 		if(cJSON_HasObjectItem(pSub,"waite_time") == 1){
 			item = cJSON_GetObjectItem(pSub , "waite_time");
-			spi_handler->c[i].waite_time = bb_strtoull(item->valuestring, NULL, 16);
+			spi_handler->c[i].waite_time = get_item_val(item->valuestring);
 		}
 
 	}
@@ -300,7 +300,7 @@ int process_spi_cmd(spi_info_t* spi_handler){
 		if(spi_handler->c[i].cmd){
 			instuction = spi_handler->c[i].instuction;
 			transfer(spi_handler->fd, (char*)(&instuction), default_rx, 3, spi_handler->spimaxclk, spi_handler->spibpw);
-			printf("instruction_data : 0x%x \n", htonl(instuction)>>8);
+			//printf("instruction_data : 0x%x \n", htonl(instuction)>>8);
 			if(spi_handler->c[i].waite_time){
 				usleep(spi_handler->c[i].waite_time);
 			}	
@@ -311,13 +311,18 @@ int process_spi_cmd(spi_info_t* spi_handler){
 			for(;;){
 				instuction = spi_handler->c[i].instuction;
 				transfer(spi_handler->fd, (char*)(&instuction), default_rx, 3, spi_handler->spimaxclk, spi_handler->spibpw);
-				//printf("for: instruction_data 0x%x\n", htonl(instuction)>>8);
+				printf("for: instruction_data 0x%x\n", htonl(instuction)>>8);
+				char ret_str[16];
+				snprintf(ret_str, ARRAY_SIZE(ret_str), "0x%x", default_rx[2]);
+				printf("read cmd return value : %s \n", ret_str);
 				if(spi_handler->c[i].ifcon_flag1){
 					con1 = (((default_rx[2] & spi_handler->c[i].ifcon_mask1) == spi_handler->c[i].ifcon1) ) ;
 				}
 
 				if(spi_handler->c[i].ifcon_flag2){
 					con2 = (((default_rx[2] & spi_handler->c[i].ifcon_mask2) == spi_handler->c[i].ifcon2) ) ;
+					printf("con2 = %d --- ret : 0x%x , mask : 0x%x , ifcon2 : 0x%x\n", con2, 
+					default_rx[2], spi_handler->c[i].ifcon_mask2, spi_handler->c[i].ifcon2);
 				}
 
 				if(spi_handler->c[i].waite_time){
@@ -360,13 +365,13 @@ int main(int argc, char *argv[])
 	// 	return 0;
 	// }
 /* ------------ */
-	if(argc == 3){
+	if(argc == 3){ //spi_tool [spidev] [instuction]
 		spi_handler->spidev = malloc(strlen(argv[1])+1);
 		memcpy(spi_handler->spidev,argv[1],strlen(argv[1])+1);
 		instuction = bb_strtoull(argv[2], NULL, 16);
 		instuction = htonl(instuction) >> 8;
 		printf("device : %s , instuction : %s , 0x%x \n", spi_handler->spidev, argv[2], instuction);
-    }else if(argc == 2){
+    }else if(argc == 2){ //spi_tool [json]
 		jsonBuf = get_json_buf(argv[1]);
 		printf("get json : %s \n", jsonBuf);
 		if(parse_spidev(jsonBuf,spi_handler) == -1){
@@ -380,13 +385,13 @@ int main(int argc, char *argv[])
 	/* spi init */
 	ret = init_spidev(spi_handler);
 
-	if(jsonBuf == NULL){
+	if(jsonBuf == NULL){ //spi_tool [spidev] [instuction]
 		transfer(spi_handler->fd, (char*)(&instuction), default_rx, 3, spi_handler->spimaxclk, spi_handler->spibpw);
 		printf("running instruction_1\n");
 		char ret_str[16];
 		snprintf(ret_str, ARRAY_SIZE(ret_str), "0x%x", default_rx[2]);
 		printf("return value : %s \n", ret_str);
-	}else{
+	}else{ //spi_tool [json]
 		process_spi_cmd(spi_handler);
 		printf("spi transfer end !\n");
 		free(jsonBuf);
