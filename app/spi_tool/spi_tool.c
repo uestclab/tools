@@ -313,7 +313,7 @@ int process_spi_cmd(spi_info_t* spi_handler){
 				transfer(spi_handler->fd, (char*)(&instuction), default_rx, 3, spi_handler->spimaxclk, spi_handler->spibpw);
 				printf("for: instruction_data 0x%x\n", htonl(instuction)>>8);
 				char ret_str[16];
-				snprintf(ret_str, ARRAY_SIZE(ret_str), "0x%x", default_rx[2]);
+				snprintf(ret_str, ARRAY_SIZE(ret_str), "0x%02X%02X%02X", default_rx[0], default_rx[1], default_rx[2]);
 				printf("read cmd return value : %s \n", ret_str);
 				if(spi_handler->c[i].ifcon_flag1){
 					con1 = (((default_rx[2] & spi_handler->c[i].ifcon_mask1) == spi_handler->c[i].ifcon1) ) ;
@@ -389,7 +389,8 @@ int main(int argc, char *argv[])
 		transfer(spi_handler->fd, (char*)(&instuction), default_rx, 3, spi_handler->spimaxclk, spi_handler->spibpw);
 		printf("running instruction_1\n");
 		char ret_str[16];
-		snprintf(ret_str, ARRAY_SIZE(ret_str), "0x%x", default_rx[2]);
+		snprintf(ret_str, ARRAY_SIZE(ret_str), "0x%02X%02X%02X", default_rx[0], default_rx[1], default_rx[2]);
+		printf("rx: 0x%x , 0x%x , 0x%x \n", default_rx[0], default_rx[1], default_rx[2]);
 		printf("return value : %s \n", ret_str);
 	}else{ //spi_tool [json]
 		process_spi_cmd(spi_handler);
