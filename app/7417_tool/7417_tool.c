@@ -6,30 +6,7 @@
 #include "7417_ops.h"
 #include "cmd_line.h"
 
-void small_int2str(int val, char* str){
-	char tmp[3];
-	sprintf(tmp, "%d", val);
-	if(strlen(tmp) == 1){
-		memcpy(str + 1, tmp, strlen(str) + 1);
-	}else{
-		memcpy(str,tmp,strlen(str) + 1);
-	}
-}
-
 void show_sensor_data(){
-
-	// char str[128];
-    // char hours[3] = {'0'};
-	// char minutes[3] = {'0'};
-	// char seconds[3] = {'0'};
-
-	// small_int2str(time->hours, hours);
-	// small_int2str(time->minutes, minutes);
-	// small_int2str(time->seconds, seconds);
-
-	// sprintf(str,"%s %s %d -- %s:%s:%s %d \n", weekday_str[time->weekdays], months_str[time->months-1], time->days,
-	// 						 hours, minutes, seconds, time->years);
-	// printf(str);
 
 	char str[128];
 
