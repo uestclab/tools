@@ -40,6 +40,7 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/app/rtc_tool)
 add_subdirectory(${PROJECT_SOURCE_DIR}/app/7417_tool)
 add_subdirectory(${PROJECT_SOURCE_DIR}/app/gpio_tool)
 add_subdirectory(${PROJECT_SOURCE_DIR}/app/rf_7516_tool)
+add_subdirectory(${PROJECT_SOURCE_DIR}/app/5682_spi_tool)
 
 
 
