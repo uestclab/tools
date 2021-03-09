@@ -16,9 +16,8 @@
 #define SPI_SCLK_AD5682   1018
 
 
-int simulate_spi_init(void);
+int simulate_spi_init(int spi_delay_time_us, int mode);
 void spi_write (unsigned char* buf, int len);
-void cs_disable();
 
 #endif
 

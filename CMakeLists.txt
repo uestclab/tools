@@ -42,6 +42,8 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/app/gpio_tool)
 add_subdirectory(${PROJECT_SOURCE_DIR}/app/rf_7516_tool)
 add_subdirectory(${PROJECT_SOURCE_DIR}/app/5682_spi_tool)
 
+add_subdirectory(${PROJECT_SOURCE_DIR}/app/c++/iqimb)
+
 
 
 

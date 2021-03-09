@@ -25,9 +25,15 @@
 
 #define _SPI_DELAY_TIME_US_ 1000
 
+int spi_delay_time_us_ = 0;
+int mode_ = 0;
+
 /* init */
-int simulate_spi_init(void)
+int simulate_spi_init(int spi_delay_time_us, int mode)
 {
+    spi_delay_time_us_ = spi_delay_time_us;
+    mode_ = mode;
+
     /*mosi*/
     if(gpio_open(SPI_SDI_AD5682, 1) < 0){
         return -1;
@@ -52,10 +58,6 @@ int simulate_spi_init(void)
         return -1;
     }
 
-    write_clk_low();
-    udelay(_SPI_DELAY_TIME_US_);
-    cs_low();
-
     return 0;
 }
 
@@ -63,8 +65,22 @@ void cs_disable(){
     cs_high();
 }
 
+void start_spi(){
+    if(mode_ == 0){
+        ;
+    }else if(mode_ == 1){
+        write_clk_low();
+        udelay(spi_delay_time_us_);
+        cs_low();
+    }else if(mode_ == 2){
+        ;
+    }else if(mode_ == 3){
+        ;
+    }
+}
+
 /* Mode_1 */
-void simulate_spi_write_byte(unsigned char tx_data)
+void simulate_spi_write_byte_mode_1(unsigned char tx_data)
 {
 	int i = 0;
 	for(i = 7;i >= 0;i--)
@@ -80,17 +96,27 @@ void simulate_spi_write_byte(unsigned char tx_data)
 			write_gpio_low();
             printf("0");
 		}
-        udelay(_SPI_DELAY_TIME_US_);
+        udelay(spi_delay_time_us_);
 		write_clk_low();
-		udelay(_SPI_DELAY_TIME_US_);		
+		udelay(spi_delay_time_us_);		
 	}
 }
 
 void spi_write (unsigned char* buf, int len)  
 {  
+    start_spi();
     int i;
-    for (i=0; i<len; i++){ 
-        printf("\n buf[%d] = 0x%x \n", i, buf[i]);
-        simulate_spi_write_byte(buf[i]);
-    }  
+    if(mode_ == 0){
+        ;
+    }else if(mode_ == 1){
+        for (i=0; i<len; i++){ 
+            printf("\n buf[%d] = 0x%x \n", i, buf[i]);
+            simulate_spi_write_byte_mode_1(buf[i]);
+        }
+    }else if(mode_ == 2){
+        ;
+    }else if(mode_ == 3){
+        ;
+    }
+    cs_disable();  
 }
