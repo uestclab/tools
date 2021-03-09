@@ -8,13 +8,16 @@
 #include <fstream>
 #include "common.hpp"
 
+#ifdef PLATFORM
 #include "zlog.h"
+#endif
 
 #define IQ_ALL_NUM_512    512
 #define IQ_ALL_NUM_256    256
 #define IQ_ALL_NUM_128    128
 #define IQ_ALL_NUM_64      64
 
+#ifdef PLATFORM
 zlog_category_t * initLog(const char* path, char* app_name){
 	int rc;
 	zlog_category_t *zlog_handler = NULL;
@@ -41,6 +44,8 @@ zlog_category_t * initLog(const char* path, char* app_name){
 void closeLog(){
 	zlog_fini();
 }
+
+#endif
 
 char *get_prog_name(char *argv)
 {
@@ -231,6 +236,7 @@ int32_t tranform_float2int(float f_value){
 	return value;
 }
 
+#ifdef PLATFORM
 void compensate_by_devmem(int addr, int32_t value, zlog_category_t *zlog_handler){
 	char command[128];
 	sprintf(command, "devmem 0x%x 32 0x%x", addr, value);
@@ -269,6 +275,7 @@ void write_to_fpga(float *c1, float *c2, zlog_category_t *zlog_handler){
 		compensate_by_devmem(addr[i],value_all, zlog_handler);
 	}
 }
+#endif
 
 int main(int argc, char* argv[])
 {
@@ -278,13 +285,15 @@ int main(int argc, char* argv[])
 	}
 
 	char *app_name = "iq_imbalance";
+
+#ifdef PLATFORM	
 	zlog_category_t *zlog_handler = initLog(argv[2],app_name);
 	// zlog_category_t *zlog_handler = initLog(argv[2],get_prog_name(argv[0]));
 
 	zlog_info(zlog_handler,"******************** start iq_imbalance process ********************************\n");
 
 	zlog_info(zlog_handler,"this version built time is:[%s  %s]\n",__DATE__,__TIME__);
-
+#endif
 	// get data from fpga..... 
 	// fpag data sequence transfer to arm sequence....
 	// 256 factor = 2; (0:127) = alpha , (128:255) = beta 
@@ -309,14 +318,13 @@ int main(int argc, char* argv[])
 	}
 
 	int max_alpha = findMaxPath(raw_alpha_IData, raw_alpha_QData, IQ_ALL_NUM_128);
-
-	zlog_info(zlog_handler, "max_alpha = %d" ,max_alpha);
-
 	int num_alpha = downsample(raw_alpha_IData, raw_alpha_QData, max_alpha);
 	int num_beta = downsample(raw_beta_IData, raw_beta_QData, max_alpha);
 
+#ifdef PLATFORM	
+	zlog_info(zlog_handler, "max_alpha = %d" ,max_alpha);
 	zlog_info(zlog_handler, "num_alpha = %d , num_beta = %d \n" , num_alpha, num_beta);
-
+#endif
 	/* 	
 		num = 64 , 
 		raw_alpha_IData = h_alpha_i
@@ -329,14 +337,20 @@ int main(int argc, char* argv[])
 	float c2[3] = {0};
 
 	if(0==cal_iq_imbalance(raw_alpha_IData,raw_alpha_QData,raw_beta_IData,raw_beta_QData,IQ_ALL_NUM_64, c1, c2)){
+#ifdef PLATFORM	
 		write_to_fpga(c1,c2,zlog_handler);
+#endif
 	}else{
+#ifdef PLATFORM	
 		init_fpga(zlog_handler);
 		zlog_info(zlog_handler, "not set iq_imbalance compensate !");
+#endif
 		return 0;
 	}
 
+#ifdef PLATFORM	
 	zlog_info(zlog_handler, "------------ end iq_imbalance !");
+#endif
 
 	return 0;
 }

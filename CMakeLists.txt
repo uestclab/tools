@@ -15,7 +15,7 @@ if(${PUBLIC} STREQUAL "ON")
 	SET(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 
 	SET(CMAKE_C_COMPILER ${TOOLCHAIN_DIR}/bin/arm-linux-gnueabihf-gcc)
-	SET(CMAKE_CXX_COMPILER ${TOOLCHAIN_DIR}/bin/arm-linux-gnueabihf-g++)
+	# SET(CMAKE_CXX_COMPILER ${TOOLCHAIN_DIR}/bin/arm-linux-gnueabihf-g++)
 
 elseif(${PUBLIC} STREQUAL "OFF")
     message(STATUS "start to build PC platform.")

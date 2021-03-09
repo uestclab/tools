@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-option(PLATFORM "This is a default option for Arm PLATFORM" ON)
+option(PLATFORM "This is a default option for Arm PLATFORM" OFF)
 message(STATUS "build public platform switch:"${PLATFORM})
 
 SET(BIN_NAME iq_imbalance) 
@@ -18,7 +18,7 @@ if(${PLATFORM} STREQUAL "ON")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wall -O2 -std=c++11 -mfpu=neon -mcpu=cortex-a9")
 
 elseif(${PLATFORM} STREQUAL "OFF")
-    message(STATUS "start to build PC platform.")
+    message(STATUS "iq imbalance start to build PC platform.")
 	message(STATUS "PROJECT_SOURCE_DIR": ${PROJECT_SOURCE_DIR})
 
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wall -O2 -std=c++11 ")
@@ -37,13 +37,15 @@ aux_source_directory(${PROJECT_SOURCE_DIR}/app/c++/iqimb BIN_SRCS)
  
 add_executable(${BIN_NAME} ${BIN_SRCS})
 
-add_library(zlog SHARED IMPORTED)
+if(${PLATFORM} STREQUAL "ON")
+	add_library(zlog SHARED IMPORTED)
+	# 设置第三方动态库属性
+	set_target_properties(zlog PROPERTIES IMPORTED_LOCATION
+						/home/dpdk/liqing/common/lib/libzlog.so) 
+	target_link_libraries(${BIN_NAME} zlog)
+elseif(${PLATFORM} STREQUAL "OFF")
 
-# 设置第三方动态库属性
-set_target_properties(zlog PROPERTIES IMPORTED_LOCATION
-					  /home/dpdk/liqing/common/lib/libzlog.so)
-					  
-target_link_libraries(${BIN_NAME} zlog)
+endif(${PLATFORM} STREQUAL "ON")
 
 install(TARGETS ${BIN_NAME} DESTINATION ${PROJECT_SOURCE_DIR}/bin/c++/)
 
