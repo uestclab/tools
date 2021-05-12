@@ -9,7 +9,13 @@ uint8_t run_i2cget_cmd(int addr, int reg)
     char buf[BUFSZ]; 
     char command[150]; 
  
+#ifdef ZYNQ
     sprintf(command, "i2cget -f -y 1 0x%x 0x%x", addr, reg);
+#endif
+
+#ifdef ZYNQ_MP
+    sprintf(command, "i2cget -f -y 0 0x%x 0x%x", addr, reg);
+#endif
 	//printf("command : %s\n",command); 
 
     if((fp = popen(command,"r")) == NULL) 
@@ -34,7 +40,13 @@ uint8_t run_i2cget_cmd(int addr, int reg)
 void run_i2cset_cmd(int addr, int reg, uint8_t value)
 {
     char command[128];
+#ifdef ZYNQ
     sprintf(command, "i2cset -f -y 1 0x%x 0x%x 0x%x", addr, reg, value);
+#endif
+
+#ifdef ZYNQ_MP
+	sprintf(command, "i2cset -f -y 0 0x%x 0x%x 0x%x", addr, reg, value);
+#endif
 	system(command);
 }
 

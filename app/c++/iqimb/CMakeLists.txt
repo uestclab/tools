@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-option(PLATFORM "This is a default option for Arm PLATFORM" OFF)
+option(PLATFORM "This is a default option for Arm PLATFORM" ON)
 message(STATUS "build public platform switch:"${PLATFORM})
 
 SET(BIN_NAME iq_imbalance) 
