@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-option(var_platform "This is a default option for ARM64 PLATFORM" OFF)
+option(var_platform "This is a default option for ARM64 PLATFORM" ON)
 message(STATUS "build public platform switch:"${var_platform})
 project(tools)
 
@@ -52,6 +52,7 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/app/rtc_tool)
 # add_subdirectory(${PROJECT_SOURCE_DIR}/app/7417_tool)
 add_subdirectory(${PROJECT_SOURCE_DIR}/app/gpio_tool)
 add_subdirectory(${PROJECT_SOURCE_DIR}/app/rf_7516_tool)
+add_subdirectory(${PROJECT_SOURCE_DIR}/app/rf_7516_agc)
 # add_subdirectory(${PROJECT_SOURCE_DIR}/app/5682_spi_tool)
 
 # add_subdirectory(${PROJECT_SOURCE_DIR}/app/c++/iqimb)

@@ -238,10 +238,10 @@ int32_t tranform_float2int(float f_value){
 
 #ifdef PLATFORM
 void compensate_by_devmem(int addr, int32_t value, zlog_category_t *zlog_handler){
-	char command[128];
-	sprintf(command, "devmem 0x%x 32 0x%x", addr, value);
-	system(command);
-	zlog_info(zlog_handler, "devmem 0x%x 32 0x%x \n", addr, value);
+	// char command[128];
+	// sprintf(command, "devmem 0x%x 32 0x%x", addr, value);
+	// system(command);
+	// zlog_info(zlog_handler, "devmem 0x%x 32 0x%x \n", addr, value);
 }
 
 void init_fpga(zlog_category_t *zlog_handler){
@@ -272,6 +272,7 @@ void write_to_fpga(float *c1, float *c2, zlog_category_t *zlog_handler){
 		value_2 = tranform_float2int(c2[i]);
 		value_all = (value_1 << 16) + value_2;
 		zlog_info(zlog_handler, "c1[%d] = %f - %x, c2[%d] = %f - %x", i, c1[i], value_1, i, c2[i], value_2);
+		printf("c1[%d] = %f - %x, c2[%d] = %f - %x", i, c1[i], value_1, i, c2[i], value_2);
 		compensate_by_devmem(addr[i],value_all, zlog_handler);
 	}
 }

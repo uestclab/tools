@@ -366,7 +366,7 @@ int process_spi_cmd(spi_info_t* spi_handler){
 				snprintf(ret_str, ARRAY_SIZE(ret_str), "0x%02X%02X%02X", default_rx[0], default_rx[1], default_rx[2]);
 				printf("read cmd return value : %s \n", ret_str);
 				if(spi_handler->c[i].ifcon_flag1){
-					con1 = (((default_rx[2] & spi_handler->c[i].ifcon_mask1) == spi_handler->c[i].ifcon1) ) ;
+					con1 = (((default_rx[1] & spi_handler->c[i].ifcon_mask1) == spi_handler->c[i].ifcon1) ) ;
 				}
 
 				if(spi_handler->c[i].ifcon_flag2){
