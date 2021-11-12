@@ -17,6 +17,7 @@
 #include <dirent.h>
 #include <limits.h>
 #include <errno.h>
+#include <assert.h>
 #include <poll.h>
 #include "list.h"
 

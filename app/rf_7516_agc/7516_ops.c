@@ -46,33 +46,33 @@ void init_7516(){
 	run_i2cset_cmd(0x48,0x19,control_2);
 	uint8_t control_3 = 0x0b;
 	run_i2cset_cmd(0x48,0x1a,control_3);
-	uint8_t control_4 = 0x3f;
+	uint8_t control_4 = 0x30;
 	run_i2cset_cmd(0x48,0x1b,control_4);
 }
 
 void tx_ATT(){
-	uint8_t control_1 = 0x00;
+	uint8_t control_1 = 0x05;
 	run_i2cset_cmd(0x48,0x11,control_1);
 	uint8_t control_2 = 0x00;
 	run_i2cset_cmd(0x48,0x10,control_2);
-	uint8_t control_3 = 0x31;
+	uint8_t control_3 = 0x01;
 	run_i2cset_cmd(0x48,0x1c,control_3);
 }
 
 void rx_ATT_first(){
-	uint8_t control_1 = 0x00;
+	uint8_t control_1 = 0x05;
 	run_i2cset_cmd(0x48,0x15,control_1);
 	uint8_t control_2 = 0x00;
 	run_i2cset_cmd(0x48,0x14,control_2);
-	uint8_t control_3 = 0x34;
+	uint8_t control_3 = 0x04;
 	run_i2cset_cmd(0x48,0x1c,control_3);
 }
 
 void rx_ATT_second(){
-	uint8_t control_1 = 0xeb;
+	uint8_t control_1 = 0xd7;
 	run_i2cset_cmd(0x48,0x17,control_1);
 	uint8_t control_2 = 0xc0;
 	run_i2cset_cmd(0x48,0x16,control_2);
-	uint8_t control_3 = 0x38;
+	uint8_t control_3 = 0x08;
 	run_i2cset_cmd(0x48,0x1c,control_3);
 }
