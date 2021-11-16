@@ -11,4 +11,11 @@
 
 #define	SHORT_COMMON_OPT	"hvf:l:p:s::d:"
 
-int parse_cmd_line(int argc, char **argv, char **prog_name, char **log_file);
+typedef struct g_args_para{
+	char*   prog_name;
+	char*   conf_file;
+	char*   log_file;
+	int     debug_switch;
+}g_args_para;
+
+int parse_cmd_line(int argc, char **argv, g_args_para *g_args);

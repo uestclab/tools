@@ -6,6 +6,7 @@ void stop_mosquitto_client();
 
 int my_publish(const char *topic, int payloadlen, void *payload);
 
+int my_subscribe();
 
 
 #endif// MOSQUITTO_BROKER_H

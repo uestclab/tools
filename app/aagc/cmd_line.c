@@ -7,7 +7,15 @@ const struct option long_options[] = {
 	LONG_COMMON_OPT
 };
 
-static int universal_get_opt(int opt, const char *optarg, char **log_file){
+static void print_usage (FILE* stream, int exit_code, g_args_para *g_args){
+	fprintf (stream, "Usage: %s options ,eg:%s -v\n", g_args->prog_name,g_args->prog_name);
+
+	printf(" -f : montab / configure file .\n");
+	printf(" -l : zlog_default.conf\n");
+	printf(" -d : 0 --- close zlog , 1 --- open zlog.\n");
+}
+
+static int universal_get_opt(int opt, const char *optarg, g_args_para *g_args){
 	int ret = -EINVAL;
 	
 	switch (opt) {
@@ -15,29 +23,39 @@ static int universal_get_opt(int opt, const char *optarg, char **log_file){
 			fprintf (stdout, "Version: build-%s %s\n",\
 				__DATE__,__TIME__);
 
-			ret = 0;
+			ret = -EPERM;
 		break;
 		
 		case 'h':
-			ret = 0;
+			print_usage (stdout, 0, g_args);
+			ret = -EPERM;
 		break;
 
 		case 'f':
+			g_args->conf_file = (char*)malloc(strlen(optarg)+1);
+			if(g_args->conf_file){
+				strcpy(g_args->conf_file, optarg);
+                //fprintf (stdout, "optarg : %s ,conf_file : %s \n", optarg,g_args->conf_file);
+			}else{
+				//
+			}
 			ret = 0;
 		break;
 
 		case 'l':
-			*log_file = (char*)malloc(strlen(optarg)+1);
-			if(*log_file){
-				strcpy(*log_file, optarg);
-                //fprintf (stdout, "optarg : %s ,log_file : %s \n", optarg, *log_file);
+			g_args->log_file = (char*)malloc(strlen(optarg)+1);
+			if(g_args->log_file){
+				strcpy(g_args->log_file, optarg);
+                //fprintf (stdout, "optarg : %s ,log_file : %s \n", optarg,g_args->log_file);
 			}else{
 				;
 			}
 			ret = 0;
 		break;
 
-		case 'r':
+		case 'd':
+			g_args->debug_switch = bb_strtoull(optarg, NULL, 0);
+			ret = 0;
 			break;
 
 		default: ;
@@ -67,21 +85,16 @@ char *get_prog_name(char *argv)
 	return argv + i;
 }
 
-int parse_cmd_line(int argc, char **argv, char **prog_name, char **log_file)
+int parse_cmd_line(int argc, char **argv, g_args_para *g_args)
 {
 	int ret = 0; //exitcode
 	int opt;
 	
-	*prog_name = get_prog_name(argv[0]);
-
-	char *tmp_log_file;
+	g_args->prog_name = get_prog_name(argv[0]);
 
 	while ((opt = getopt_long(argc, argv, short_options, long_options, NULL)) != -1) {
-		ret |= universal_get_opt(opt, optarg, &tmp_log_file);
+		ret |= universal_get_opt(opt, optarg, g_args);
 	}	
-
-	*log_file = tmp_log_file;
-	// fprintf (stdout, "tmp_log_file : %s -- *log_file : %s \n", tmp_log_file, *log_file);
 
 	return ret;
 }

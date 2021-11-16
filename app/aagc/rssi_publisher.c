@@ -3,8 +3,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/time.h>
+#include <time.h>
 #include "aagc_ops.h"
-#include "mosquitto/mosquitto_broker.h"
+#include "mosquitto/mosquitto_client.h"
 #include "cJSON.h"
 
 char* rssi_data_json(float rssi_data, int seq_num){

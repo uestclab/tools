@@ -29,6 +29,8 @@ struct mosq_config *cfg = NULL;
 
 static volatile int status = STATUS_CONNECTING;
 
+int sub_cnt = 0;
+
 void my_log_callback(struct mosquitto *mosq, void *obj, int level, const char *str)
 {
 	UNUSED(mosq);
@@ -81,6 +83,13 @@ int my_publish(const char *topic, int payloadlen, void *payload)
 	return ret;
 }
 
+int my_subscribe(const char *sub_topic){
+	int mid = 0;
+	int qos = 2;
+	int topic_count = 1;
+	mosquitto_subscribe_multiple(g_mosq, &mid, topic_count, (char *const *const)&sub_topic, qos, 0, NULL);
+	return 0;
+}
 
 void my_connect_callback(struct mosquitto *mosq, void *obj, int result, int flags, const mosquitto_property *properties)
 {
@@ -89,6 +98,12 @@ void my_connect_callback(struct mosquitto *mosq, void *obj, int result, int flag
 	UNUSED(obj);
 	UNUSED(flags);
 	UNUSED(properties);
+
+   if(!result){
+        my_subscribe("gw/test_sub");
+    }else{
+        printf("Connect failed\n");
+	}
 
 	printf("Call the function: my_connect_callback\n");
 }
@@ -102,6 +117,25 @@ void my_publish_callback(struct mosquitto *mosq, void *obj, int mid, int reason_
 	printf("Call the function: my_publish_callback\n");
 }
 
+void my_message_callback(struct mosquitto *mosq, void *userdata, const struct mosquitto_message *message)
+{
+	sub_cnt++;
+    if(message->payloadlen){
+        printf(" sub_cnt = %d ---- sub_topic : %s ---- msg : %s \n", sub_cnt, message->topic, (char *)message->payload);
+    }else{
+        printf("%s (null)\n", message->topic);
+    }
+}
+
+void my_subscribe_callback(struct mosquitto *mosq, void *userdata, int mid, int qos_count, const int *granted_qos)
+{
+    int i;
+    printf("Subscribed (mid: %d): %d", mid, granted_qos[0]);
+    for(i=1; i<qos_count; i++){
+        printf(", %d", granted_qos[i]);
+    }
+    printf("\n");
+}
 
 static void print_version(void)
 {
@@ -169,6 +203,8 @@ int start_mosquitto_client(char *prog_name)
 	mosquitto_connect_v5_callback_set(g_mosq, my_connect_callback);
 	mosquitto_disconnect_v5_callback_set(g_mosq, my_disconnect_callback);
 	mosquitto_publish_v5_callback_set(g_mosq, my_publish_callback);
+    mosquitto_message_callback_set(g_mosq, my_message_callback);
+    mosquitto_subscribe_callback_set(g_mosq, my_subscribe_callback);
 
 	// if(client_opts_set(mosq, cfg)){
 	// 	goto cleanup;
@@ -199,3 +235,4 @@ void stop_mosquitto_client(){
 	mosquitto_lib_cleanup();
 	// client_config_cleanup(&cfg);
 }
+
