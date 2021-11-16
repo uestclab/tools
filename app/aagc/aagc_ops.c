@@ -2,7 +2,9 @@
 #include "str2digit.h"
 #include "gain_table.h"
 #include "aagc_ops.h"
- #include <math.h>
+#include <math.h>
+
+void info_zlog(zlog_category_t *zlog_handler, const char *format, ...);
 
 uint32_t read_reg(int reg_addr)
 {
@@ -124,8 +126,9 @@ void change_step(struct aagc_state *p_state, int agc_step){
 
 void caculate_rssi(float gain_res, struct aagc_state *p_state){
 	float gain_if = t_if_gain[p_state->t_idx];
-	p_state->rssi = -16.5 - gain_res - gain_if;
-	zlog_info(p_state->zlog_handler,"rssi = %f , gain_res = %f , gain_if = %f , coarse_cnt = %u ,fine_cnt = %u\n", 
+	float rssi = -16.5 - gain_res - gain_if;
+	set_rssi(p_state, rssi);
+	info_zlog(p_state->zlog_handler,"rssi = %f , gain_res = %f , gain_if = %f , coarse_cnt = %u ,fine_cnt = %u\n", 
 	   p_state->rssi, gain_res, gain_if, p_state->coarse_cnt, p_state->fine_cnt);
 }
 
@@ -204,27 +207,27 @@ int agc_process_loop(struct aagc_state *p_state){
 		switch (p_state->step){
 			case START:
 			{	
-				zlog_info(p_state->zlog_handler,"State : START \n");
+				info_zlog(p_state->zlog_handler,"State : START \n");
 				start(p_state);
 				change_step(p_state, COARSE);
 				break;
 			}
 			case COARSE:
 			{
-				zlog_info(p_state->zlog_handler,"State : COARSE \n");
+				info_zlog(p_state->zlog_handler,"State : COARSE \n");
 				int ret = coarse_aagc(p_state);
 				if(ret == 0){
 					change_step(p_state, FINE);
 				}else if(ret == 1){
-					zlog_info(p_state->zlog_handler,"cnt_positive ....... \n");
+					info_zlog(p_state->zlog_handler,"cnt_positive ....... \n");
 				}else if(ret == -1){
-					zlog_info(p_state->zlog_handler,"cnt_negtive  ....... \n");
+					info_zlog(p_state->zlog_handler,"cnt_negtive  ....... \n");
 				}
 				break;
 			}
 			case FINE:
 			{	
-				zlog_info(p_state->zlog_handler,"State : FINE \n");
+				info_zlog(p_state->zlog_handler,"State : FINE \n");
 				int ret = fine_aagc(p_state);
 				if(ret == -1){
 					change_step(p_state, COARSE);
@@ -238,6 +241,22 @@ int agc_process_loop(struct aagc_state *p_state){
 				break;
 		}
 	}
+}
+
+
+// rssi ops
+float get_rssi(struct aagc_state *p_state){
+    float rssi = -99.0f;
+    pthread_mutex_lock(&(p_state->rssi_mutex));
+    rssi = p_state->rssi;
+    pthread_mutex_unlock(&(p_state->rssi_mutex));
+    return rssi;
+}
+
+void set_rssi(struct aagc_state *p_state, float rssi){
+    pthread_mutex_lock(&(p_state->rssi_mutex));
+    p_state->rssi = rssi;
+    pthread_mutex_unlock(&(p_state->rssi_mutex));
 }
 
 void test(struct aagc_state *p_state){

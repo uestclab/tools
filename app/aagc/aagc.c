@@ -5,7 +5,9 @@
 #include "str2digit.h"
 #include "aagc_ops.h"
 #include "cmd_line.h"
+#include "mosquitto/mosquitto_broker.h"
 
+int start_publish_rssi(struct aagc_state *p_state);
 
 zlog_category_t * initLog(const char* path, char* app_name){
 	int rc;
@@ -34,6 +36,17 @@ void closeLog(){
 	zlog_fini();
 }
 
+void info_zlog(zlog_category_t *zlog_handler, const char *format, ...)
+{
+	return;
+	char log_buf[1024] = { 0 };
+	va_list args;
+	va_start(args, format);
+	vsprintf(log_buf, format, args);
+	va_end(args);
+	zlog_info(zlog_handler, log_buf);
+}
+
 int main(int argc, char *argv[])
 {
 	char*   prog_name;
@@ -59,10 +72,17 @@ int main(int argc, char *argv[])
 	p_state->t_idx = 0;
 	p_state->control_val = 0x0;
 	p_state->zlog_handler = zlog_handler;
+	pthread_mutex_init(&(p_state->rssi_mutex),NULL);
 	p_state->rssi = -99.0f;
 	p_state->coarse_cnt = 0;
 	p_state->fine_cnt   = 0;
 
+	if(start_mosquitto_client(prog_name) != 0){
+		zlog_info(zlog_handler,"start_mosquitto_client failed !\n");
+		return 0;
+	}
+
+	start_publish_rssi(p_state);
 	agc_process_loop(p_state);
 
 	// test(p_state);
