@@ -23,7 +23,7 @@ uint32_t read_reg(int reg_addr)
     {
 		value = (char*)malloc(strlen(buf)+1);
         memcpy(value,buf,strlen(buf)+1);
-		printf("get value : %s", value); 
+		// printf("get value : %s", value); 
     }
     
     pclose(fp); 
@@ -31,6 +31,7 @@ uint32_t read_reg(int reg_addr)
     fp=NULL;
 
 	uint32_t ret = bb_strtoull(value, NULL, 16);
+	ret = ret & (0x7fff);
 	return ret;
 
 }
@@ -121,6 +122,13 @@ void change_step(struct aagc_state *p_state, int agc_step){
 	p_state->step = agc_step;
 }
 
+void caculate_rssi(float gain_res, struct aagc_state *p_state){
+	float gain_if = t_if_gain[p_state->t_idx];
+	p_state->rssi = -16.5 - gain_res - gain_if;
+	zlog_info(p_state->zlog_handler,"rssi = %f , gain_res = %f , gain_if = %f , coarse_cnt = %u ,fine_cnt = %u\n", 
+	   p_state->rssi, gain_res, gain_if, p_state->coarse_cnt, p_state->fine_cnt);
+}
+
 /* ----  aagc operation ---- */
 
 void start(struct aagc_state *p_state){
@@ -142,9 +150,11 @@ int coarse_aagc(struct aagc_state *p_state){
 	while(abs(gain_step) > HIGH_THRESHOLD){
 		ret = update_table_idx(p_state, gain_step);
 		update_gain_by_table(p_state->t_idx);
-		gain_step = get_gain_step();
 		p_state->control_val = combine_control_val(p_state->t_idx);
-		
+		gain_step = get_gain_step();
+		float tmp = gain_step * 1.0;
+		p_state->coarse_cnt ++;
+		caculate_rssi(tmp, p_state);
 		if(ret == 1){
 			cnt_positive ++;
 			if(cnt_positive == 10){
@@ -176,11 +186,15 @@ int fine_aagc(struct aagc_state *p_state){
 	while(fabs(gain_res) > LOW_THRESHOLD){
 		int diff_one = (gain_res > 0.0f) ? -1 : 1 ; 
 		update_gain_fine(p_state, diff_one);
+		p_state->t_idx = find_near_table_idx(p_state->control_val);
 		gain_res = get_gain_diff();
+		p_state->fine_cnt++;
+		caculate_rssi(gain_res, p_state);
 		if(fabs(gain_res) > HIGH_THRESHOLD){
 			return -1;
 		}
 	}
+	caculate_rssi(gain_res, p_state);
 	return 0;
 }
 
@@ -190,24 +204,27 @@ int agc_process_loop(struct aagc_state *p_state){
 		switch (p_state->step){
 			case START:
 			{	
+				zlog_info(p_state->zlog_handler,"State : START \n");
 				start(p_state);
 				change_step(p_state, COARSE);
 				break;
 			}
 			case COARSE:
 			{
+				zlog_info(p_state->zlog_handler,"State : COARSE \n");
 				int ret = coarse_aagc(p_state);
 				if(ret == 0){
 					change_step(p_state, FINE);
 				}else if(ret == 1){
-					;
+					zlog_info(p_state->zlog_handler,"cnt_positive ....... \n");
 				}else if(ret == -1){
-					;
+					zlog_info(p_state->zlog_handler,"cnt_negtive  ....... \n");
 				}
 				break;
 			}
 			case FINE:
 			{	
+				zlog_info(p_state->zlog_handler,"State : FINE \n");
 				int ret = fine_aagc(p_state);
 				if(ret == -1){
 					change_step(p_state, COARSE);

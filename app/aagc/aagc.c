@@ -59,6 +59,9 @@ int main(int argc, char *argv[])
 	p_state->t_idx = 0;
 	p_state->control_val = 0x0;
 	p_state->zlog_handler = zlog_handler;
+	p_state->rssi = -99.0f;
+	p_state->coarse_cnt = 0;
+	p_state->fine_cnt   = 0;
 
 	agc_process_loop(p_state);
 
