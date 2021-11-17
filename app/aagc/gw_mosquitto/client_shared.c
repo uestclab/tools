@@ -1327,279 +1327,6 @@ int client_id_generate(struct mosq_config *cfg)
 	return MOSQ_ERR_SUCCESS;
 }
 
-int client_connect(struct mosquitto *mosq, struct mosq_config *cfg)
-{
-#ifndef WIN32
-	char *err;
-#else
-	char err[1024];
-#endif
-	int rc;
-	int port;
-
-	if(cfg->port == PORT_UNDEFINED){
-#ifdef WITH_TLS
-		if(cfg->cafile || cfg->capath
-#  ifdef FINAL_WITH_TLS_PSK
-				|| cfg->psk
-#  endif
-				){
-			port = 8883;
-		}else
-#endif
-		{
-			port = 1883;
-		}
-	}else{
-		port = cfg->port;
-	}
-
-#ifdef WITH_SRV
-	if(cfg->use_srv){
-		rc = mosquitto_connect_srv(mosq, cfg->host, cfg->keepalive, cfg->bind_address);
-	}else{
-		rc = mosquitto_connect_bind_v5(mosq, cfg->host, port, cfg->keepalive, cfg->bind_address, cfg->connect_props);
-	}
-#else
-	rc = mosquitto_connect_bind_v5(mosq, cfg->host, port, cfg->keepalive, cfg->bind_address, cfg->connect_props);
-#endif
-	if(rc>0){
-		if(rc == MOSQ_ERR_ERRNO){
-#ifndef WIN32
-			err = strerror(errno);
-#else
-			FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, errno, 0, (LPTSTR)&err, 1024, NULL);
-#endif
-			err_printf(cfg, "Error: %s\n", err);
-		}else{
-			err_printf(cfg, "Unable to connect (%s).\n", mosquitto_strerror(rc));
-		}
-		mosquitto_lib_cleanup();
-		return rc;
-	}
-	return MOSQ_ERR_SUCCESS;
-}
-
-#ifdef WITH_SOCKS
-/* Convert %25 -> %, %3a, %3A -> :, %40 -> @ */
-static int mosquitto__urldecode(char *str)
-{
-	size_t i, j;
-	size_t len;
-	if(!str) return 0;
-
-	if(!strchr(str, '%')) return 0;
-
-	len = strlen(str);
-	for(i=0; i<len; i++){
-		if(str[i] == '%'){
-			if(i+2 >= len){
-				return 1;
-			}
-			if(str[i+1] == '2' && str[i+2] == '5'){
-				str[i] = '%';
-				len -= 2;
-				for(j=i+1; j<len; j++){
-					str[j] = str[j+2];
-				}
-				str[j] = '\0';
-			}else if(str[i+1] == '3' && (str[i+2] == 'A' || str[i+2] == 'a')){
-				str[i] = ':';
-				len -= 2;
-				for(j=i+1; j<len; j++){
-					str[j] = str[j+2];
-				}
-				str[j] = '\0';
-			}else if(str[i+1] == '4' && str[i+2] == '0'){
-				str[i] = ':';
-				len -= 2;
-				for(j=i+1; j<len; j++){
-					str[j] = str[j+2];
-				}
-				str[j] = '\0';
-			}else{
-				return 1;
-			}
-		}
-	}
-	return 0;
-}
-
-static int mosquitto__parse_socks_url(struct mosq_config *cfg, char *url)
-{
-	char *str;
-	size_t i;
-	char *username = NULL, *password = NULL, *host = NULL, *port = NULL;
-	char *username_or_host = NULL;
-	size_t start;
-	size_t len;
-	bool have_auth = false;
-	int port_int;
-
-	if(!strncmp(url, "socks5h://", strlen("socks5h://"))){
-		str = url + strlen("socks5h://");
-	}else{
-		err_printf(cfg, "Error: Unsupported proxy protocol: %s\n", url);
-		return 1;
-	}
-
-	/* socks5h://username:password@host:1883
-	 * socks5h://username:password@host
-	 * socks5h://username@host:1883
-	 * socks5h://username@host
-	 * socks5h://host:1883
-	 * socks5h://host
-	 */
-
-	start = 0;
-	for(i=0; i<strlen(str); i++){
-		if(str[i] == ':'){
-			if(i == start){
-				goto cleanup;
-			}
-			if(have_auth){
-				/* Have already seen a @ , so this must be of form
-				 * socks5h://username[:password]@host:port */
-				if(host){
-					/* Already seen a host, must be malformed. */
-					goto cleanup;
-				}
-				len = i-start;
-				host = malloc(len + 1);
-				if(!host){
-					err_printf(cfg, "Error: Out of memory.\n");
-					goto cleanup;
-				}
-				memcpy(host, &(str[start]), len);
-				host[len] = '\0';
-				start = i+1;
-			}else if(!username_or_host){
-				/* Haven't seen a @ before, so must be of form
-				 * socks5h://host:port or
-				 * socks5h://username:password@host[:port] */
-				len = i-start;
-				username_or_host = malloc(len + 1);
-				if(!username_or_host){
-					err_printf(cfg, "Error: Out of memory.\n");
-					goto cleanup;
-				}
-				memcpy(username_or_host, &(str[start]), len);
-				username_or_host[len] = '\0';
-				start = i+1;
-			}
-		}else if(str[i] == '@'){
-			if(i == start){
-				goto cleanup;
-			}
-			have_auth = true;
-			if(username_or_host){
-				/* Must be of form socks5h://username:password@... */
-				username = username_or_host;
-				username_or_host = NULL;
-
-				len = i-start;
-				password = malloc(len + 1);
-				if(!password){
-					err_printf(cfg, "Error: Out of memory.\n");
-					goto cleanup;
-				}
-				memcpy(password, &(str[start]), len);
-				password[len] = '\0';
-				start = i+1;
-			}else{
-				/* Haven't seen a : yet, so must be of form
-				 * socks5h://username@... */
-				if(username){
-					/* Already got a username, must be malformed. */
-					goto cleanup;
-				}
-				len = i-start;
-				username = malloc(len + 1);
-				if(!username){
-					err_printf(cfg, "Error: Out of memory.\n");
-					goto cleanup;
-				}
-				memcpy(username, &(str[start]), len);
-				username[len] = '\0';
-				start = i+1;
-			}
-		}
-	}
-
-	/* Deal with remainder */
-	if(i > start){
-		len = i-start;
-		if(host){
-			/* Have already seen a @ , so this must be of form
-			 * socks5h://username[:password]@host:port */
-			port = malloc(len + 1);
-			if(!port){
-				err_printf(cfg, "Error: Out of memory.\n");
-				goto cleanup;
-			}
-			memcpy(port, &(str[start]), len);
-			port[len] = '\0';
-		}else if(username_or_host){
-			/* Haven't seen a @ before, so must be of form
-			 * socks5h://host:port */
-			host = username_or_host;
-			username_or_host = NULL;
-			port = malloc(len + 1);
-			if(!port){
-				err_printf(cfg, "Error: Out of memory.\n");
-				goto cleanup;
-			}
-			memcpy(port, &(str[start]), len);
-			port[len] = '\0';
-		}else{
-			host = malloc(len + 1);
-			if(!host){
-				err_printf(cfg, "Error: Out of memory.\n");
-				goto cleanup;
-			}
-			memcpy(host, &(str[start]), len);
-			host[len] = '\0';
-		}
-	}
-
-	if(!host){
-		err_printf(cfg, "Error: Invalid proxy.\n");
-		goto cleanup;
-	}
-
-	if(mosquitto__urldecode(username)){
-		goto cleanup;
-	}
-	if(mosquitto__urldecode(password)){
-		goto cleanup;
-	}
-	if(port){
-		port_int = atoi(port);
-		if(port_int < 1 || port_int > 65535){
-			err_printf(cfg, "Error: Invalid proxy port %d\n", port_int);
-			goto cleanup;
-		}
-		free(port);
-	}else{
-		port_int = 1080;
-	}
-
-	cfg->socks5_username = username;
-	cfg->socks5_password = password;
-	cfg->socks5_host = host;
-	cfg->socks5_port = port_int;
-
-	return 0;
-cleanup:
-	free(username_or_host);
-	free(username);
-	free(password);
-	free(host);
-	free(port);
-	return 1;
-}
-#endif
-
 void err_printf(const struct mosq_config *cfg, const char *fmt, ...)
 {
 	va_list va;
@@ -1609,5 +1336,27 @@ void err_printf(const struct mosq_config *cfg, const char *fmt, ...)
 	va_start(va, fmt);
 	vfprintf(stderr, fmt, va);
 	va_end(va);
+}
+
+// fly_pig
+int my_cfg_add_sub_topic(struct mosq_config *cfg, char *topic)
+{
+	if(mosquitto_validate_utf8(topic, (int )strlen(topic))){
+		fprintf(stderr, "Error: Malformed UTF-8 in argument.\n\n");
+		return 1;
+	}
+
+	if(mosquitto_sub_topic_check(topic) == MOSQ_ERR_INVAL){
+		fprintf(stderr, "Error: Invalid subscription topic '%s', are all '+' and '#' wildcards correct?\n", topic);
+		return 1;
+	}
+	cfg->topic_count++;
+	cfg->topics = realloc(cfg->topics, (size_t )cfg->topic_count*sizeof(char *));
+	if(!cfg->topics){
+		err_printf(cfg, "Error: Out of memory.\n");
+		return 1;
+	}
+	cfg->topics[cfg->topic_count-1] = strdup(topic);
+	return 0;
 }
 

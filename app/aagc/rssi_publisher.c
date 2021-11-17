@@ -6,7 +6,7 @@
 #include <sys/time.h>
 #include <time.h>
 #include "aagc_ops.h"
-#include "mosquitto/mosquitto_client.h"
+#include "gw_mosquitto/mosquitto_client.h"
 #include "cJSON.h"
 
 char* rssi_data_json(float rssi_data, int seq_num){

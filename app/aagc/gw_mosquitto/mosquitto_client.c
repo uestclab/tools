@@ -12,6 +12,8 @@
 #include "mosquitto.h"
 #include "client_shared.h"
 
+#include "mosquitto_client.h"
+
 
 #define MSG_MAX_SIZE  512
 
@@ -26,6 +28,7 @@ struct mosquitto *g_mosq = NULL;
 
 int mid_sent = -1;
 struct mosq_config *cfg = NULL;
+struct mosq_user *my_user_config = NULL;
 
 static volatile int status = STATUS_CONNECTING;
 
@@ -83,6 +86,7 @@ int my_publish(const char *topic, int payloadlen, void *payload)
 	return ret;
 }
 
+// user add sub topic
 int my_subscribe(const char *sub_topic){
 	int mid = 0;
 	int qos = 2;
@@ -100,7 +104,7 @@ void my_connect_callback(struct mosquitto *mosq, void *obj, int result, int flag
 	UNUSED(properties);
 
    if(!result){
-        my_subscribe("gw/test_sub");
+		mosquitto_subscribe_multiple(mosq, NULL, cfg->topic_count, cfg->topics, 2, 0, NULL);
     }else{
         printf("Connect failed\n");
 	}
@@ -117,11 +121,22 @@ void my_publish_callback(struct mosquitto *mosq, void *obj, int mid, int reason_
 	printf("Call the function: my_publish_callback\n");
 }
 
+
+// struct mosquitto_message{
+// 	int mid;
+// 	char *topic;
+// 	void *payload;
+// 	int payloadlen;
+// 	int qos;
+// 	bool retain;
+// };
+
 void my_message_callback(struct mosquitto *mosq, void *userdata, const struct mosquitto_message *message)
 {
 	sub_cnt++;
     if(message->payloadlen){
         printf(" sub_cnt = %d ---- sub_topic : %s ---- msg : %s \n", sub_cnt, message->topic, (char *)message->payload);
+		my_user_config->sub_callback((char *)message->payload, message->payloadlen, message->topic, userdata);
     }else{
         printf("%s (null)\n", message->topic);
     }
@@ -145,30 +160,47 @@ static void print_version(void)
 	printf("version libmosquitto %d.%d.%d.\n", major, minor, revision);
 }
 
-int configure_cfg(char *prog_name){
+int configure_cfg(struct mosq_user *user_config){
 	cfg = (struct mosq_config*)malloc(sizeof(struct mosq_config));
 	cfg->quiet = false; // log switch
 	cfg->clean_session = true;
-	cfg->id_prefix = malloc(strlen(prog_name)+1);
+	cfg->id_prefix = malloc(strlen(user_config->prog_name)+1);
 	if(cfg->id_prefix == NULL){
 		return -1;
 	}
-	memcpy(cfg->id_prefix, prog_name, strlen(prog_name)+1);
+	memcpy(cfg->id_prefix, user_config->prog_name, strlen(user_config->prog_name)+1);
 
 	cfg->host = "localhost";
 	cfg->port = 1883;
-	cfg->keepalive = 60;
+	cfg->keepalive = 600;
 
 	cfg->bind_address = NULL;
 	cfg->connect_props = NULL;
 
 	cfg->debug = false;
 
+	int i;
+	for(i=0;i<user_config->topic_count;i++){
+		if(my_cfg_add_sub_topic(cfg, user_config->sub_topics[i]) != 0){
+			return 1;
+		}
+	}
+
 	return 0;
 }
 
+// struct mosq_user{
+// 	char *prog_name;
+// 	char **sub_topics;
+// 	int topic_count;
+// 	sub_cb sub_callback;
+//     exception_cb exception_callback;
+//     log_print log_print_callback;
+// 	void *userdata;
+// };
+
 // main interface()
-int start_mosquitto_client(char *prog_name)
+int start_mosquitto_client(struct mosq_user *user_config)
 {
 	int rc;
 
@@ -177,15 +209,21 @@ int start_mosquitto_client(char *prog_name)
 		return -1;
 	}
 
-	if(configure_cfg(prog_name) != 0){
+	if(configure_cfg(user_config) != 0){
 		goto cleanup;
 	}
+ 
+	my_user_config = (struct mosq_user*)malloc(sizeof(struct mosq_user));
+	my_user_config->sub_callback = user_config->sub_callback;
+	my_user_config->exception_callback = user_config->exception_callback;
+	my_user_config->log_print_callback = user_config->log_print_callback;
+	my_user_config->userdata = user_config->userdata;
 
 	if(client_id_generate(cfg)){
 		goto cleanup;
 	}
 
-	g_mosq = mosquitto_new(cfg->id, cfg->clean_session, NULL);
+	g_mosq = mosquitto_new(cfg->id, cfg->clean_session, user_config->userdata);
 	if(!g_mosq){
 		switch(errno){
 			case ENOMEM:

@@ -5,7 +5,7 @@
 #include "str2digit.h"
 #include "aagc_ops.h"
 #include "cmd_line.h"
-#include "mosquitto/mosquitto_client.h"
+#include "gw_mosquitto/mosquitto_client.h"
 
 int start_publish_rssi(struct aagc_state *p_state);
 int debug_switch = 0; // 0 : no zlog file 
@@ -50,6 +50,13 @@ void info_zlog(zlog_category_t *zlog_handler, const char *format, ...)
 	zlog_info(zlog_handler, log_buf);
 }
 
+int sub_process_callback(char *buf, int buf_len, char *topic, void *userdata){
+	printf(" sub_process_callback : sub_topic : %s ---- msg : %s \n", topic, buf);
+	struct aagc_state *p_state = (struct aagc_state *)userdata;
+	// printf(" rssi = %f, coarse_cnt = %u, fine_cnt = %u \n", p_state->rssi, p_state->coarse_cnt, p_state->fine_cnt);
+	return 0;
+}
+
 int main(int argc, char *argv[])
 {
 	g_args_para g_args = {
@@ -83,7 +90,33 @@ int main(int argc, char *argv[])
 	p_state->coarse_cnt = 0;
 	p_state->fine_cnt   = 0;
 
-	if(start_mosquitto_client(g_args.prog_name) != 0){
+	int topic_count = 3;
+	char **sub_topics = malloc((size_t )topic_count*sizeof(char *));
+	sub_topics[0] = "gw/test_sub";
+	sub_topics[1] = "gw/test_sub_1";
+	sub_topics[2] = "gw/test_sub_2";
+
+// struct mosq_user{
+// 	char *prog_name;
+// 	char **sub_topics;
+// 	int topic_count;
+// 	sub_cb sub_callback;
+//     exception_cb exception_callback;
+//     log_print log_print_callback;
+// 	void *userdata;
+// };
+
+	struct mosq_user *user_config = (struct mosq_user *)malloc(sizeof(struct mosq_user));
+	user_config->prog_name = strdup(g_args.prog_name);
+	user_config->userdata  = (void*)p_state;
+	user_config->topic_count = 3;
+	user_config->sub_topics = malloc((size_t )user_config->topic_count*sizeof(char *));
+	user_config->sub_topics[0] = "gw/test_sub";
+	user_config->sub_topics[1] = "gw/test_sub_1";
+	user_config->sub_topics[2] = "gw/test_sub_2";
+	user_config->sub_callback = sub_process_callback;
+
+	if(start_mosquitto_client(user_config) != 0){
 		zlog_info(zlog_handler,"start_mosquitto_client failed !\n");
 		return 0;
 	}

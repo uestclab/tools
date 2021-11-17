@@ -114,9 +114,10 @@ int client_config_load(struct mosq_config *config, int pub_or_sub, int argc, cha
 void client_config_cleanup(struct mosq_config *cfg);
 int client_opts_set(struct mosquitto *mosq, struct mosq_config *cfg);
 int client_id_generate(struct mosq_config *cfg);
-int client_connect(struct mosquitto *mosq, struct mosq_config *cfg);
 
 int cfg_parse_property(struct mosq_config *cfg, int argc, char *argv[], int *idx);
 
 void err_printf(const struct mosq_config *cfg, const char *fmt, ...) __attribute__((format(printf, 2, 3)));
+
+int my_cfg_add_sub_topic(struct mosq_config *cfg, char *topic);
 #endif

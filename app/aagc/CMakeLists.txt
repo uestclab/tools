@@ -13,13 +13,19 @@ aux_source_directory(${PROJECT_SOURCE_DIR}/app/aagc BIN_SRCS)
 
 aux_source_directory(${PROJECT_SOURCE_DIR}/src SRCS)
 
-aux_source_directory(${PROJECT_SOURCE_DIR}/app/aagc/mosquitto MOSQUITTO_SRCS)
+# aux_source_directory(${PROJECT_SOURCE_DIR}/app/aagc/mosquitto MOSQUITTO_SRCS)
  
-add_executable(${BIN_NAME} ${BIN_SRCS} ${SRCS} ${MOSQUITTO_SRCS})
+# add_executable(${BIN_NAME} ${BIN_SRCS} ${SRCS} ${MOSQUITTO_SRCS})
+
+include_directories("${PROJECT_SOURCE_DIR}/app/aagc/gw_mosquitto")
+link_directories("${PROJECT_SOURCE_DIR}/app/aagc/gw_mosquitto/lib/")
+ADD_SUBDIRECTORY(gw_mosquitto)
 
 add_library(cjson SHARED IMPORTED)
 add_library(zlog SHARED IMPORTED)
 add_library(mosquitto SHARED IMPORTED)
+
+add_executable(${BIN_NAME} ${BIN_SRCS} ${SRCS})
 
 if(${var_platform} STREQUAL "ON")
     set_target_properties(cjson PROPERTIES IMPORTED_LOCATION
@@ -41,6 +47,7 @@ endif(${var_platform} STREQUAL "ON")
 
 target_link_libraries(${BIN_NAME} cjson)
 target_link_libraries(${BIN_NAME} zlog)
+target_link_libraries(${BIN_NAME} mosquitto_client)
 target_link_libraries(${BIN_NAME} mosquitto)
 target_link_libraries(${BIN_NAME} -pthread)
 target_link_libraries(${BIN_NAME} -lm)
