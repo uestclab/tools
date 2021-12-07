@@ -40,7 +40,7 @@ void my_log_callback(struct mosquitto *mosq, void *obj, int level, const char *s
 	UNUSED(obj);
 	UNUSED(level);
 
-	printf("%s\n", str);
+	// printf("%s\n", str);
 }
 
 void my_disconnect_callback(struct mosquitto *mosq, void *obj, int rc, const mosquitto_property *properties)
@@ -118,7 +118,7 @@ void my_publish_callback(struct mosquitto *mosq, void *obj, int mid, int reason_
 	char *reason_string = NULL;
 	UNUSED(obj);
 	UNUSED(properties);
-	printf("Call the function: my_publish_callback\n");
+	// printf("Call the function: my_publish_callback\n");
 }
 
 
@@ -135,7 +135,7 @@ void my_message_callback(struct mosquitto *mosq, void *userdata, const struct mo
 {
 	sub_cnt++;
     if(message->payloadlen){
-        printf(" sub_cnt = %d ---- sub_topic : %s ---- msg : %s \n", sub_cnt, message->topic, (char *)message->payload);
+        // printf(" mosq_client : sub_cnt = %d ---- sub_topic : %s ---- msg : %s \n", sub_cnt, message->topic, (char *)message->payload);
 		my_user_config->sub_callback((char *)message->payload, message->payloadlen, message->topic, userdata);
     }else{
         printf("%s (null)\n", message->topic);
@@ -144,6 +144,7 @@ void my_message_callback(struct mosquitto *mosq, void *userdata, const struct mo
 
 void my_subscribe_callback(struct mosquitto *mosq, void *userdata, int mid, int qos_count, const int *granted_qos)
 {
+	return ;
     int i;
     printf("Subscribed (mid: %d): %d", mid, granted_qos[0]);
     for(i=1; i<qos_count; i++){

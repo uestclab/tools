@@ -44,17 +44,14 @@ SET(CMAKE_VERBOSE_MAKEFILE ON)
 SET(ROOT_PATH ".")
 
 #app
-add_subdirectory(${PROJECT_SOURCE_DIR}/app/spi_tool)
-#add_subdirectory(${PROJECT_SOURCE_DIR}/app/spi_load_fpga)
-# add_subdirectory(${PROJECT_SOURCE_DIR}/app/dac_temp_tool)
-add_subdirectory(${PROJECT_SOURCE_DIR}/app/reg_tool)
-add_subdirectory(${PROJECT_SOURCE_DIR}/app/rtc_tool)
-# add_subdirectory(${PROJECT_SOURCE_DIR}/app/7417_tool)
-add_subdirectory(${PROJECT_SOURCE_DIR}/app/gpio_tool)
-add_subdirectory(${PROJECT_SOURCE_DIR}/app/rf_7516_tool)
-add_subdirectory(${PROJECT_SOURCE_DIR}/app/rf_7516_agc)
-# add_subdirectory(${PROJECT_SOURCE_DIR}/app/5682_spi_tool)
-add_subdirectory(${PROJECT_SOURCE_DIR}/app/aagc)
+# add_subdirectory(${PROJECT_SOURCE_DIR}/app/spi_tool)
+# add_subdirectory(${PROJECT_SOURCE_DIR}/app/reg_tool)
+# add_subdirectory(${PROJECT_SOURCE_DIR}/app/rtc_tool)
+# add_subdirectory(${PROJECT_SOURCE_DIR}/app/gpio_tool)
+# add_subdirectory(${PROJECT_SOURCE_DIR}/app/rf_7516_tool)
+# add_subdirectory(${PROJECT_SOURCE_DIR}/app/rf_7516_agc)
+# add_subdirectory(${PROJECT_SOURCE_DIR}/app/aagc)
+add_subdirectory(${PROJECT_SOURCE_DIR}/app/serial)
 
 
 

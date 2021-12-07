@@ -1,6 +1,5 @@
 
 #include "tool.h"
-#include "cJSON.h"
 #include "read_file.h"
 #include "str2digit.h"
 #include "aagc_ops.h"
@@ -42,6 +41,7 @@ void info_zlog(zlog_category_t *zlog_handler, const char *format, ...)
 	if(debug_switch == 0){
 		return;
 	}
+
 	char log_buf[1024] = { 0 };
 	va_list args;
 	va_start(args, format);
@@ -51,7 +51,7 @@ void info_zlog(zlog_category_t *zlog_handler, const char *format, ...)
 }
 
 int sub_process_callback(char *buf, int buf_len, char *topic, void *userdata){
-	printf(" sub_process_callback : sub_topic : %s ---- msg : %s \n", topic, buf);
+	// printf(" sub_process_callback : sub_topic : %s ---- msg : %s \n", topic, buf);
 	struct aagc_state *p_state = (struct aagc_state *)userdata;
 	// printf(" rssi = %f, coarse_cnt = %u, fine_cnt = %u \n", p_state->rssi, p_state->coarse_cnt, p_state->fine_cnt);
 	return 0;
@@ -72,13 +72,21 @@ int main(int argc, char *argv[])
 	}else if(-EPERM == ret){
 		return 0;
 	}
-	fprintf (stdout, "cmd line : %s -l %s\n", g_args.prog_name, g_args.log_file);
+	fprintf (stdout, "cmd line : %s -l %s -d %d\n", g_args.prog_name, g_args.log_file, g_args.debug_switch);
 	
 	debug_switch = g_args.debug_switch;
 
 	zlog_category_t *zlog_handler = initLog(g_args.log_file,g_args.prog_name);
 	zlog_info(zlog_handler,"******************** start aagc ********************************\n");
 	zlog_info(zlog_handler,"this version built time is:[%s  %s]\n",__DATE__,__TIME__);
+
+	char *jsonBuf = get_json_buf(g_args.conf_file);
+	if(parse_table(jsonBuf) == -1){
+		zlog_info(zlog_handler," gain_table.json error \n");
+		return 0;
+	}
+
+	print_table(zlog_handler);
 
 	struct aagc_state *p_state = (struct aagc_state *)malloc(sizeof(struct aagc_state));
 	p_state->step = START;

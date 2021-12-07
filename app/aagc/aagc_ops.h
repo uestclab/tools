@@ -32,5 +32,9 @@ void test(struct aagc_state *p_state);
 float get_rssi(struct aagc_state *p_state);
 void set_rssi(struct aagc_state *p_state, float rssi);
 
+void print_table(zlog_category_t *zlog_handler);
+
+int parse_table(char* buf);
+
 
 #endif

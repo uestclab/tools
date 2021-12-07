@@ -1,10 +1,75 @@
 #include "tool.h"
+#include "cJSON.h"
 #include "str2digit.h"
 #include "gain_table.h"
 #include "aagc_ops.h"
 #include <math.h>
 
 void info_zlog(zlog_category_t *zlog_handler, const char *format, ...);
+
+uint16_t combine_control_val(int table_idx);
+
+void print_table(zlog_category_t *zlog_handler){
+	for(int i=0;i<T_SIZE;i++){
+		info_zlog(zlog_handler, "0x%x , 0x%x , %2.3f , %2.3f ", t_reg_0x17[i], t_reg_0x16[i], t_if_gain[i], t_attenuation[i]);
+	}
+}
+
+int parse_table(char* buf){
+	cJSON * root = NULL;
+    cJSON * item = NULL;
+    root = cJSON_Parse(buf);
+	cJSON * array_item = NULL;
+	array_item = cJSON_GetObjectItem(root , "op_cmd");
+	int op_cnt = cJSON_GetArraySize(array_item);
+	for(int i=0;i<op_cnt;i++){
+		cJSON * pSub = cJSON_GetArrayItem(array_item, i);
+		int id             = -1;
+		uint16_t reg_0x17  = 0;
+		uint16_t reg_0x16  = 0;
+		float    if_gain   = 0.0f;
+		float    attenuate = 0.0f;
+		if(cJSON_HasObjectItem(pSub,"id") == 0){
+			return -1;
+		}
+		if(cJSON_HasObjectItem(pSub,"reg_0x17") == 0){
+			return -1;
+		}
+		if(cJSON_HasObjectItem(pSub,"reg_0x16") == 0){
+			return -1;
+		}
+		if(cJSON_HasObjectItem(pSub,"if_gain") == 0){
+			return -1;
+		}
+		if(cJSON_HasObjectItem(pSub,"attenuate") == 0){
+			return -1;
+		}
+
+		item = cJSON_GetObjectItem(pSub , "id");
+		id = bb_strtoull(item->valuestring, NULL, 10);
+		// fprintf (stdout, "id = %s \n", item->valuestring); 
+		item = cJSON_GetObjectItem(pSub , "reg_0x17");
+		reg_0x17 = bb_strtoull(item->valuestring, NULL, 16);
+		// fprintf (stdout, "reg_0x17 = %s \n", item->valuestring); 
+		item = cJSON_GetObjectItem(pSub , "reg_0x16");
+		reg_0x16 = bb_strtoull(item->valuestring, NULL, 16);
+		// fprintf (stdout, "reg_0x16 = %s \n", item->valuestring); 
+		item = cJSON_GetObjectItem(pSub , "if_gain");
+		if_gain = item->valuedouble;
+		item = cJSON_GetObjectItem(pSub , "attenuate");
+		attenuate = item->valuedouble;
+
+		t_reg_0x17[id]    = reg_0x17;
+		t_reg_0x16[id]    = reg_0x16;
+		t_if_gain[id]     = if_gain;
+		t_attenuation[id] = attenuate;
+		// fprintf (stdout, "%d 0x%x 0x%x %f %f \n", id, reg_0x17, reg_0x16, if_gain, attenuate); 
+	}
+	
+	cJSON_Delete(root);
+	return 0;
+}
+
 
 uint32_t read_reg(int reg_addr)
 {
@@ -67,6 +132,14 @@ void update_gain_fine(struct aagc_state *p_state, int one_step){
 		p_state->control_val = p_state->control_val + 1;
 	}else{
 		p_state->control_val = p_state->control_val - 1;
+	}
+
+	if(p_state->control_val > combine_control_val(0)){
+		p_state->control_val = combine_control_val(0);
+	}
+
+	if(p_state->control_val < combine_control_val(T_SIZE-1)){
+		p_state->control_val = combine_control_val(T_SIZE-1);
 	}
 
 	uint16_t reg_high = (p_state->control_val & (0xfff0)) >> 4;

@@ -54,7 +54,8 @@ static int universal_get_opt(int opt, const char *optarg, g_args_para *g_args){
 		break;
 
 		case 'd':
-			g_args->debug_switch = bb_strtoull(optarg, NULL, 0);
+			g_args->debug_switch = bb_strtoull(optarg, NULL, 10);
+			fprintf (stdout, "optarg : %s ,debug_switch : %d \n", optarg,g_args->debug_switch);
 			ret = 0;
 			break;
 
